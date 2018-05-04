@@ -114,8 +114,8 @@ noJagsSamples <- thinning*finalSampleSize
 
 ## Set up list of analyses to run
 toRun <- data.frame(
-  site=c(rep("FSR",3),rep("HONEYRUN",4),rep("MOOREMAN",4),rep("MECHANICSBURG",4) ),
-  quartile=c(1:3,rep((1:4), 3) )
+  site=c(rep("FSR",2),rep("HONEYRUN",2),rep("MOOREMAN",2),rep("MECHANICSBURG",2) ),
+  quartile=c(rep((1:2), 4) )
 )
 
 ## Iterate through list 
