@@ -70,6 +70,15 @@ waggleDataMB <- read.csv("Mechanicsburg_all_dances.csv") # Sponsler: path to our
 waggleData <- rbind(waggleDataFSR, waggleDataHR, waggleDataMO, waggleDataMB) # Concatenate all dance data
 waggleData <- subset(waggleData, flag == 1) # Sponsler: a flag field removes empty or incomplete lines
 
+# Divide into quartiles
+q <- quantile(waggleData$day)
+waggleData$quartile
+waggleData[waggleData$day <= q[5],]$quartile <- 4
+waggleData[waggleData$day <= q[4],]$quartile <- 3
+waggleData[waggleData$day <= q[3],]$quartile <- 2
+waggleData[waggleData$day <= q[2],]$quartile <- 1
+
+
 # we only want the first dance of every individual bee, and we prepare a function to achieve that
 #getFirstElement <- function(pVector){
 	#reslt <- NA
