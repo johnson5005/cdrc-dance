@@ -72,28 +72,18 @@ waggleData <- subset(waggleData, flag == 1) # Sponsler: a flag field removes emp
 
 # Divide into quartiles
 q <- quantile(waggleData$day)
-waggleData$quartile
+waggleData$quartile <- 0
 waggleData[waggleData$day <= q[5],]$quartile <- 4
 waggleData[waggleData$day <= q[4],]$quartile <- 3
 waggleData[waggleData$day <= q[3],]$quartile <- 2
 waggleData[waggleData$day <= q[2],]$quartile <- 1
 
-
-# we only want the first dance of every individual bee, and we prepare a function to achieve that
-#getFirstElement <- function(pVector){
-	#reslt <- NA
-	#if(length(pVector) > 0){
-  	  #reslt <- pVector[1]
-  	#}
-  #reslt
-  #}
-
-# now only select the first dance of every bee
-#waggleData <- aggregate(cbind(dance.id = waggleData$dance.id, 
- #                             duration = waggleData$duration,
-                             #distance = waggleData$distance,
-  #                            heading = waggleData$heading), #by = list(bee.id = waggleData$bee.id),
-                       # getFirstElement)
+# Establish locations 
+# the UTM 17N (EPSG:26917) northing/easting of the hives in meters
+location <- data.frame(
+  site= c("FSR", "HONEYRUN", "MOOREMAN", "MECHANICSBURG"),
+  easting = c(292263.656365, 317334.853833, 295906.044842, 278907.984269 ),
+  northing = c(4426271.356893, 4391383.561963, 4406432.40089, 4430377.392885) )
 
 # make the data properly circular
 waggleData$heading <- circular(waggleData$heading,
@@ -108,11 +98,25 @@ finalSampleSize <- 1000
 thinning <- 100
 noJagsSamples <- thinning*finalSampleSize
 
+## Set up list of analyses to run
+toRun <- data.frame(
+  site=c(rep("FSR",3),rep("HONEYRUN",4),rep("MOOREMAN",4),rep("MECHANICSBURG",4) ),
+  quartile=c(1:3,rep((1:4), 3) )
+)
+
+## Iterate through list 
+for (i in 1:dim(toRun)[1]){
+  print(toRun[i,])
+# Subset to get just the data for each site and quartile
+site <- toRun$site[i]
+quartile <- toRun$quartile[i]
+wD <- waggleData[waggleData$hive == site & waggleData$quartile == quartile,]
+
 # preparations to calculate point coords from angle and distance
 #hiveEasting <- 534939				# the UK grid easting of the hives in meters
-hiveEasting <- 292263.656365 # Sponsler: the UTM 17N (EPSG:26917) easting of the hives in meters
+hiveEasting <- location[location$site == site,]$easting  # Sponsler: the UTM 17N (EPSG:26917) easting of the hives in meters
 #hiveNorthing <- 108900				# the UK grid northing of the hives in meters
-hiveNorthing <- 4426271.356893 # Sponsler: the UTM 17N (EPSG:26917) northing of the hives in meters
+hiveNorthing <- location[location$site == site,]$northing # Sponsler: the UTM 17N (EPSG:26917) northing of the hives in meters
 
 # to calculate the rasters
 distanceToHives <- 10000			# how far should the rasters extend from the hives in meters
@@ -153,10 +157,10 @@ K <- length(unique(calibDataAggBees$bee.id))
 bee <- factor(calibDataAggBees$bee.id)
 
 # loop through all the dances
-for(i in 1:length(waggleData$dance.id)){
-  cat(paste(i, "of", length(waggleData$dance.id), "\n"))
+for(i in 1:length(wD$dance.id)){
+  cat(paste(i, "of", length(wD$dance.id), "\n"))
   # choose only the i^th dance
-  tempData <- waggleData[i,]
+  tempData <- wD[i,]
 
   # prepare the variables for the prediction model
   N2 <- length(tempData$duration)
@@ -260,7 +264,12 @@ proj4string(crop.rast) = CRS("+init=epsg:26917") # Sponsler:
 
 # we crop the data raster to size
 new.data.rast <- crop(total.temp.rast, crop.rast)
-writeRaster(new.data.rast, filename = "FSR_all_dances.tif", format = "GTiff", overwrite = T) # Sponsler: this geotiff can be loaded in QGIS to overlay on landscape layer
+# prepare a file name for the raster
+rasterName <- paste(site, "Q", quartile, "May2015.tif", sep="_")
+writeRaster(new.data.rast, filename = rasterName, format = "GTiff", overwrite = T) # Sponsler: this geotiff can be loaded in QGIS to overlay on landscape layer
+
+}
+
 
 
 ### PLOTTING WITHOUT AERIAL PHOTOGRAPHY
