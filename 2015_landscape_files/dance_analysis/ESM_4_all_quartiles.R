@@ -71,12 +71,26 @@ waggleData <- rbind(waggleDataFSR, waggleDataHR, waggleDataMO, waggleDataMB) # C
 waggleData <- subset(waggleData, flag == 1) # Sponsler: a flag field removes empty or incomplete lines
 
 # Divide into quartiles
-q <- quantile(waggleData$day)
+# q <- quantile(waggleData$day)
+# waggleData$quartile <- 0
+# waggleData[waggleData$day <= q[5],]$quartile <- 4
+# waggleData[waggleData$day <= q[4],]$quartile <- 3
+# waggleData[waggleData$day <= q[3],]$quartile <- 2
+# waggleData[waggleData$day <= q[2],]$quartile <- 1
+
+# Divide into 3 groups
+# q <- quantile(waggleData$day, probs = seq(0,1,(1/3)))
+# waggleData$quartile <- 0
+# waggleData[waggleData$day <= q[4],]$quartile <- 3
+# waggleData[waggleData$day <= q[3],]$quartile <- 2
+# waggleData[waggleData$day <= q[2],]$quartile <- 1
+
+# Divide into 2 groups
+q <- quantile(waggleData$day, probs = seq(0,1,0.5))
 waggleData$quartile <- 0
-waggleData[waggleData$day <= q[5],]$quartile <- 4
-waggleData[waggleData$day <= q[4],]$quartile <- 3
 waggleData[waggleData$day <= q[3],]$quartile <- 2
 waggleData[waggleData$day <= q[2],]$quartile <- 1
+
 
 # Establish locations 
 # the UTM 17N (EPSG:26917) northing/easting of the hives in meters
@@ -265,7 +279,7 @@ proj4string(crop.rast) = CRS("+init=epsg:26917") # Sponsler:
 # we crop the data raster to size
 new.data.rast <- crop(total.temp.rast, crop.rast)
 # prepare a file name for the raster
-rasterName <- paste(site, "Q", quartile, "May2015.tif", sep="_")
+rasterName <- paste(site, "H", quartile, "May2015.tif", sep="_")
 writeRaster(new.data.rast, filename = rasterName, format = "GTiff", overwrite = T) # Sponsler: this geotiff can be loaded in QGIS to overlay on landscape layer
 
 }
