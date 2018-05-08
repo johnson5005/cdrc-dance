@@ -36,8 +36,23 @@ library('sp')		# spatial stats, coordinates etc
 library('rgdal')	# convert between different coodrinate systems, spTransform
 library('raster')       # for plotting spatial data
 library('png')          # to save figures to jpeg
+library('googlesheets')  # Read from GoogleDocs
+library('magrittr')        # Pipes
+library('oce')  # Calculation of azimuth
 
+# Set working directory and create "data" subdirectory
 setwd("~/Downloads/version-control/cdrc-dance/2015_landscape_files/dance_analysis") # path to the working directory
+dir.create("data", showWarnings = FALSE)
+
+## Download data from GoogleDocs using googlesheets library
+waggleFile <- "2015_CDRC_dance.csv" # Set the name for the file to use
+## Download data from GoogleSheets using 'googlesheets' library.  Store as csv file specified in "wagglefile"
+# "2015 CDRC Dance Analysis" https://docs.google.com/spreadsheets/d/15EX-j0CAlhNjhP0baeBAw4FuZGjYdRkKQ1PZoj7Q_Qg/edit?usp=sharing
+
+gs_key("15EX-j0CAlhNjhP0baeBAw4FuZGjYdRkKQ1PZoj7Q_Qg") %>%
+  gs_download(ws = "Data", to = waggleFile, overwrite = TRUE)
+waggleData <- read.csv(waggleFile) # Sponsler: path to our dance data
+
 
 #read the calibration data from ESM_5.csv
 calibDataAgg <- read.csv("ESM_5.csv", row.names = 1)
