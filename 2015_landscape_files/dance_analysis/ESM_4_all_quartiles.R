@@ -49,7 +49,36 @@ waggleFile <- "2015_CDRC_dance.csv" # Set the name for the file to use
 # "2015 CDRC Dance Analysis" https://docs.google.com/spreadsheets/d/15EX-j0CAlhNjhP0baeBAw4FuZGjYdRkKQ1PZoj7Q_Qg/edit?usp=sharing
 gs_key("15EX-j0CAlhNjhP0baeBAw4FuZGjYdRkKQ1PZoj7Q_Qg") %>%
   gs_download(ws = "Data", to = waggleFile, overwrite = TRUE)
+
+## Load and process dance data
 waggleData <- read.csv(waggleFile) # Sponsler: path to our dance data
+waggleData <- subset(waggleData, flag == 1) # Sponsler: a flag field removes empty or incomplete lines
+
+# Divide into groups
+ #q <- quantile(waggleData$day)
+ #waggleData$quantile <- 0
+ #waggleData[waggleData$day <= q[5],]$quantile <- 4
+ #waggleData[waggleData$day <= q[4],]$quantile <- 3
+ #waggleData[waggleData$day <= q[3],]$quantile <- 2
+ #waggleData[waggleData$day <= q[2],]$quantile <- 1
+
+# Divide into 3 groups
+# q <- quantile(waggleData$day, probs = seq(0,1,(1/3)))
+# waggleData$quantile <- 0
+# waggleData[waggleData$day <= q[4],]$quantile <- 3
+# waggleData[waggleData$day <= q[3],]$quantile <- 2
+# waggleData[waggleData$day <= q[2],]$quantile <- 1
+
+# Divide into 2 groups
+#q <- quantile(waggleData$day, probs = seq(0,1,0.5))
+#waggleData$quantile <- 0
+#waggleData[waggleData$day <= q[3],]$quantile <- 2
+#waggleData[waggleData$day <= q[2],]$quantile <- 1
+
+# Divide based on days recommended by Rodney: May 8 and May 19
+waggleData$quantile <- 3
+waggleData[waggleData$day <= 19,]$quantile <- 2
+waggleData[waggleData$day <= 8,]$quantile <- 1
 
 #read the calibration data from ESM_5.csv
 calibDataAgg <- read.csv("ESM_5.csv", row.names = 1)
@@ -73,37 +102,6 @@ calibDataAgg$heading <- circular(calibDataAgg$heading,
    #            267, 285, 286, 268, 269, 270)
    
 # store the subset of dances going to that feeder in waggleData
-#waggleData <- calibDataAgg[calibDataAgg$dance.id %in% dance.ids,] 
-waggleDataFSR <- read.csv("FSR_all_dances.csv") # Sponsler: path to our dance data
-waggleDataHR <- read.csv("Honeyrun_all_dances.csv") # Sponsler: path to our dance data
-waggleDataMO <- read.csv("Mooreman_all_dances.csv") # Sponsler: path to our dance data
-waggleDataMB <- read.csv("Mechanicsburg_all_dances.csv") # Sponsler: path to our dance data
-
-waggleData <- rbind(waggleDataFSR, waggleDataHR, waggleDataMO, waggleDataMB) # Concatenate all dance data
-waggleData <- subset(waggleData, flag == 1) # Sponsler: a flag field removes empty or incomplete lines
-
-# Divide into quartiles
-# q <- quantile(waggleData$day)
-# waggleData$quartile <- 0
-# waggleData[waggleData$day <= q[5],]$quartile <- 4
-# waggleData[waggleData$day <= q[4],]$quartile <- 3
-# waggleData[waggleData$day <= q[3],]$quartile <- 2
-# waggleData[waggleData$day <= q[2],]$quartile <- 1
-
-# Divide into 3 groups
-# q <- quantile(waggleData$day, probs = seq(0,1,(1/3)))
-# waggleData$quartile <- 0
-# waggleData[waggleData$day <= q[4],]$quartile <- 3
-# waggleData[waggleData$day <= q[3],]$quartile <- 2
-# waggleData[waggleData$day <= q[2],]$quartile <- 1
-
-# Divide into 2 groups
-q <- quantile(waggleData$day, probs = seq(0,1,0.5))
-waggleData$quartile <- 0
-waggleData[waggleData$day <= q[3],]$quartile <- 2
-waggleData[waggleData$day <= q[2],]$quartile <- 1
-
-
 # Establish locations 
 # the UTM 17N (EPSG:26917) northing/easting of the hives in meters
 location <- data.frame(
@@ -112,7 +110,7 @@ location <- data.frame(
   northing = c(4426271.356893, 4391383.561963, 4406432.40089, 4430377.392885) )
 
 # make the data properly circular
-waggleData$heading <- circular(waggleData$heading,
+waggleData$heading <- circular(waggleData$heading.radians,
                                type = "angle", 
 							   unit = "radian", 
 							   rotation = "clock", 
@@ -125,18 +123,14 @@ thinning <- 100
 noJagsSamples <- thinning*finalSampleSize
 
 ## Set up list of analyses to run
-toRun <- data.frame(
-  site=c(rep("FSR",2),rep("HONEYRUN",2),rep("MOOREMAN",2),rep("MECHANICSBURG",2) ),
-  quartile=c(rep((1:2), 4) )
-)
+waggleData$runGroup <- paste(waggleData$hive, waggleData$quantile, sep=".")
+toRun <- unique(waggleData$runGroup)
 
 ## Iterate through list 
-for (i in 1:dim(toRun)[1]){
+for (i in 1:dim(toRun)){
   print(toRun[i,])
-# Subset to get just the data for each site and quartile
-site <- toRun$site[i]
-quartile <- toRun$quartile[i]
-wD <- waggleData[waggleData$hive == site & waggleData$quartile == quartile,]
+# Subset to get just the data for each site and quantile
+wD <- waggleData[waggleData$runGroup == i,]
 
 # preparations to calculate point coords from angle and distance
 #hiveEasting <- 534939				# the UK grid easting of the hives in meters
@@ -291,7 +285,7 @@ proj4string(crop.rast) = CRS("+init=epsg:26917") # Sponsler:
 # we crop the data raster to size
 new.data.rast <- crop(total.temp.rast, crop.rast)
 # prepare a file name for the raster
-rasterName <- paste(site, "H", quartile, "May2015.tif", sep="_")
+rasterName <- paste(i, "May2015.tif", sep="_")
 writeRaster(new.data.rast, filename = rasterName, format = "GTiff", overwrite = T) # Sponsler: this geotiff can be loaded in QGIS to overlay on landscape layer
 
 }
