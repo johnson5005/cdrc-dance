@@ -127,10 +127,10 @@ waggleData$runGroup <- paste(waggleData$hive, waggleData$quantile, sep=".")
 toRun <- unique(waggleData$runGroup)
 
 ## Iterate through list 
-for (i in 1:length(toRun)){
-  print(toRun[i])
+for (j in 1:length(toRun)){
+  print(toRun[j])
 # Subset to get just the data for each site and quantile
-wD <- waggleData[waggleData$runGroup == toRun[i],]
+wD <- waggleData[waggleData$runGroup == toRun[j],]
 
 # preparations to calculate point coords from angle and distance
 #hiveEasting <- 534939				# the UK grid easting of the hives in meters
@@ -285,7 +285,7 @@ proj4string(crop.rast) = CRS("+init=epsg:26917") # Sponsler:
 # we crop the data raster to size
 new.data.rast <- crop(total.temp.rast, crop.rast)
 # prepare a file name for the raster
-rasterName <- paste(i, "May2015.tif", sep="_")
+rasterName <- paste(toRun[j], "May2015.tif", sep="_")
 writeRaster(new.data.rast, filename = rasterName, format = "GTiff", overwrite = T) # Sponsler: this geotiff can be loaded in QGIS to overlay on landscape layer
 
 }
