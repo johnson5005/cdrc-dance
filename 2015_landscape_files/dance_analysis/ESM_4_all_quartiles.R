@@ -134,6 +134,7 @@ wD <- waggleData[waggleData$runGroup == toRun[j],]
 
 # preparations to calculate point coords from angle and distance
 #hiveEasting <- 534939				# the UK grid easting of the hives in meters
+site <- unlist(strsplit(toRun[j],".", fixed=TRUE))[1]
 hiveEasting <- location[location$site == site,]$easting  # Sponsler: the UTM 17N (EPSG:26917) easting of the hives in meters
 #hiveNorthing <- 108900				# the UK grid northing of the hives in meters
 hiveNorthing <- location[location$site == site,]$northing # Sponsler: the UTM 17N (EPSG:26917) northing of the hives in meters
