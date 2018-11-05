@@ -125,7 +125,9 @@ noJagsSamples <- thinning*finalSampleSize
 ## Set up list of analyses to run
 waggleData$runGroup <- paste(waggleData$hive, waggleData$quantile, sep=".")
 toRun <- unique(waggleData$runGroup)
-
+# Output data for incusion in paper
+outcsv <- subset(waggleData,, c("hive","quantile", "day", "month", "year", "hour", "minute", "mean_duration.sec", "heading.degrees", "azimuth"))
+write.csv2(outcsv, file="dance_vectors.csv")
 ## Iterate through list 
 for (j in 1:length(toRun)){
   print(toRun[j])
